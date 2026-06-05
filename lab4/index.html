@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lab 4 - 互動看板與個人生產力工作區">
+    <title>Lab 4 | 互動看板 Dashboard ⚡</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="theme-glass-dark">
+    <div class="dashboard-container">
+        
+        <!-- SIDEBAR -->
+        <aside class="sidebar glass-panel">
+            <div class="brand">
+                <i data-lucide="layout-dashboard" class="brand-icon"></i>
+                <div class="brand-text">
+                    <h2>IMWeb Dash</h2>
+                    <span>生產力工作區</span>
+                </div>
+            </div>
+
+            <!-- Widget: Clock & Weather -->
+            <div class="widget clock-weather-widget glass-card">
+                <div class="clock-display">
+                    <div id="liveTime" class="time-text">00:00:00</div>
+                    <div id="liveDate" class="date-text">2026年6月5日</div>
+                </div>
+                <hr class="widget-divider">
+                <div class="weather-display">
+                    <div class="weather-info">
+                        <select id="weatherCity" class="weather-select">
+                            <option value="Taipei">臺北市 🇹🇼</option>
+                            <option value="Tokyo">東京 🇯🇵</option>
+                            <option value="London">倫敦 🇬🇧</option>
+                            <option value="NewYork">紐約 🇺🇸</option>
+                            <option value="Paris">巴黎 🇫🇷</option>
+                        </select>
+                        <span id="weatherTemp" class="weather-temp">26°C</span>
+                    </div>
+                    <div class="weather-status">
+                        <i id="weatherIcon" data-lucide="sun"></i>
+                        <span id="weatherDesc" class="weather-desc">晴朗</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Widget: Habit Tracker -->
+            <div class="widget habit-widget glass-card">
+                <h3>
+                    <i data-lucide="check-square" class="heading-icon"></i>
+                    每週習慣追蹤
+                </h3>
+                <div class="habit-progress-area">
+                    <div class="habit-circle-container">
+                        <svg class="progress-ring-habit" width="60" height="60">
+                            <circle class="progress-ring-circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="4" fill="transparent" r="26" cx="30" cy="30" />
+                            <circle id="habitRing" class="progress-ring-circle-bar" stroke="var(--accent-glow)" stroke-width="4" stroke-linecap="round" fill="transparent" r="26" cx="30" cy="30" stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                        </svg>
+                        <span id="habitPercentText" class="habit-percent-text">0%</span>
+                    </div>
+                    <div class="habit-inputs">
+                        <div class="habit-item">
+                            <input type="checkbox" id="habitRead" class="habit-checkbox">
+                            <label for="habitRead">閱讀 30 分鐘</label>
+                        </div>
+                        <div class="habit-item">
+                            <input type="checkbox" id="habitExercise" class="habit-checkbox">
+                            <label for="habitExercise">健身 / 運動 🏃</label>
+                        </div>
+                        <div class="habit-item">
+                            <input type="checkbox" id="habitWater" class="habit-checkbox">
+                            <label for="habitWater">喝水 2000cc</label>
+                        </div>
+                        <div class="habit-item">
+                            <input type="checkbox" id="habitCode" class="habit-checkbox">
+                            <label for="habitCode">網頁程式設計 💻</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Widget: Focus Soundboard -->
+            <div class="widget sound-widget glass-card">
+                <h3>
+                    <i data-lucide="volume-2" class="heading-icon"></i>
+                    專注背景音效
+                </h3>
+                <div class="sound-controls">
+                    <div class="sound-item" data-sound="rain">
+                        <button class="btn-sound" id="btnRainSound" title="雨聲">
+                            <i data-lucide="cloud-rain"></i>
+                            <span>森林雨聲</span>
+                        </button>
+                        <input type="range" class="sound-volume" id="volRain" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+                    <div class="sound-item" data-sound="cafe">
+                        <button class="btn-sound" id="btnCafeSound" title="咖啡廳雜音">
+                            <i data-lucide="coffee"></i>
+                            <span>極客咖啡廳</span>
+                        </button>
+                        <input type="range" class="sound-volume" id="volCafe" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+                    <div class="sound-item" data-sound="waves">
+                        <button class="btn-sound" id="btnWavesSound" title="海浪聲">
+                            <i data-lucide="waves"></i>
+                            <span>海洋浪潮</span>
+                        </button>
+                        <input type="range" class="sound-volume" id="volWaves" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Widget: Theme Switcher -->
+            <div class="widget theme-widget glass-card">
+                <h3>
+                    <i data-lucide="palette" class="heading-icon"></i>
+                    主題色彩切換
+                </h3>
+                <div class="theme-options">
+                    <button class="btn-theme active" data-theme="glass-dark" style="background: linear-gradient(135deg, #0f2027, #203a43); border-color: #00ffcc;" title="極光暗境"></button>
+                    <button class="btn-theme" data-theme="neon-cyber" style="background: linear-gradient(135deg, #09090e, #130026); border-color: #ff007f;" title="賽博霓虹"></button>
+                    <button class="btn-theme" data-theme="sunset-gold" style="background: linear-gradient(135deg, #1f1005, #4a1c02); border-color: #ffaa00;" title="璀璨夕陽"></button>
+                    <button class="btn-theme" data-theme="lavender-dream" style="background: linear-gradient(135deg, #0b0726, #2d1b54); border-color: #bd93f9;" title="薰衣草夢境"></button>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="../imwed/index.html" class="back-link-main">
+                    <i data-lucide="arrow-left"></i>
+                    <span>回到實習作品集</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            
+            <!-- TOP BAR -->
+            <header class="main-header glass-panel">
+                <div class="welcome">
+                    <h1>歡迎回到工作台 👋</h1>
+                    <p>管理您的每日任務與專注時間</p>
+                </div>
+                <div class="stats-overview">
+                    <div class="stat-card">
+                        <span class="stat-num" id="statCompletedTasks">0</span>
+                        <span class="stat-label">已完成任務</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-num" id="statFocusTime">0m</span>
+                        <span class="stat-label">專注總時長</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- MIDDLE SECTION: KANBAN & POMODORO -->
+            <section class="board-timer-section">
+                
+                <!-- KANBAN BOARD -->
+                <div class="kanban-container glass-panel">
+                    <div class="board-header">
+                        <h2>
+                            <i data-lucide="kanban-square" class="section-icon"></i>
+                            工作看板 (Kanban)
+                        </h2>
+                        <button class="btn-primary" id="btnAddTask">
+                            <i data-lucide="plus"></i>
+                            <span>新增任務</span>
+                        </button>
+                    </div>
+
+                    <div class="kanban-board">
+                        
+                        <!-- COLUMN 1: TO DO -->
+                        <div class="kanban-col" id="colTodo" data-status="todo">
+                            <div class="col-header">
+                                <div class="col-title-wrapper">
+                                    <span class="col-indicator" style="background-color: #ff3860;"></span>
+                                    <h3>待辦事項</h3>
+                                </div>
+                                <span class="card-count" id="countTodo">0</span>
+                            </div>
+                            <div class="cards-container" id="containerTodo">
+                                <!-- Cards Injected here -->
+                            </div>
+                        </div>
+
+                        <!-- COLUMN 2: IN PROGRESS -->
+                        <div class="kanban-col" id="colProgress" data-status="progress">
+                            <div class="col-header">
+                                <div class="col-title-wrapper">
+                                    <span class="col-indicator" style="background-color: #ffdd57;"></span>
+                                    <h3>進行中</h3>
+                                </div>
+                                <span class="card-count" id="countProgress">0</span>
+                            </div>
+                            <div class="cards-container" id="containerProgress">
+                                <!-- Cards Injected here -->
+                            </div>
+                        </div>
+
+                        <!-- COLUMN 3: DONE -->
+                        <div class="kanban-col" id="colDone" data-status="done">
+                            <div class="col-header">
+                                <div class="col-title-wrapper">
+                                    <span class="col-indicator" style="background-color: #23d160;"></span>
+                                    <h3>已完成</h3>
+                                </div>
+                                <span class="card-count" id="countDone">0</span>
+                            </div>
+                            <div class="cards-container" id="containerDone">
+                                <!-- Cards Injected here -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- POMODORO TIMER -->
+                <div class="timer-container glass-panel">
+                    <div class="timer-header">
+                        <h2>
+                            <i data-lucide="timer" class="section-icon"></i>
+                            番茄專注鐘
+                        </h2>
+                    </div>
+                    
+                    <div class="timer-tabs">
+                        <button class="tab-btn active" data-mode="work">專注 (25m)</button>
+                        <button class="tab-btn" data-mode="short">短暫休息 (5m)</button>
+                        <button class="tab-btn" data-mode="long">長時間休息 (15m)</button>
+                    </div>
+
+                    <div class="timer-visual-area">
+                        <div class="timer-circle-wrapper">
+                            <svg class="progress-ring-timer" width="220" height="220">
+                                <circle class="progress-ring-timer-bg" stroke="rgba(255,255,255,0.03)" stroke-width="8" fill="transparent" r="96" cx="110" cy="110" />
+                                <circle id="timerRing" class="progress-ring-timer-bar" stroke="var(--accent-glow)" stroke-width="8" stroke-linecap="round" fill="transparent" r="96" cx="110" cy="110" stroke-dasharray="603.18" stroke-dashoffset="0" />
+                            </svg>
+                            <div class="timer-display-inner">
+                                <span id="timerTimeText" class="timer-digits">25:00</span>
+                                <span id="timerStatusLabel" class="timer-status">保持專注</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timer-controls">
+                        <button class="btn-timer-ctrl play" id="btnTimerStartStop" title="開始">
+                            <i data-lucide="play" id="timerStartStopIcon"></i>
+                        </button>
+                        <button class="btn-timer-ctrl reset" id="btnTimerReset" title="重設">
+                            <i data-lucide="rotate-ccw"></i>
+                        </button>
+                    </div>
+
+                    <div class="timer-stats">
+                        <span>今日已完成番茄鐘：<strong id="completedPomos">0</strong></span>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- BOTTOM SECTION: STICKY NOTES -->
+            <section class="sticky-section glass-panel">
+                <div class="sticky-header">
+                    <div class="sticky-title-wrapper">
+                        <h2>
+                            <i data-lucide="sticky-note" class="section-icon"></i>
+                            創意便利貼 (Sticky Notes)
+                        </h2>
+                        <span class="subtitle-text">按兩下空白處或點擊按鈕新增便利貼，滑動任意拖移！</span>
+                    </div>
+                    <button class="btn-primary accent" id="btnAddNote">
+                        <i data-lucide="plus"></i>
+                        <span>新增便利貼</span>
+                    </button>
+                </div>
+
+                <div class="sticky-notes-board" id="stickyNotesBoard">
+                    <!-- Dynamic Sticky Notes injected here -->
+                    <div class="sticky-board-placeholder" id="stickyBoardPlaceholder">
+                        <i data-lucide="mouse-pointer-click"></i>
+                        <p>在看板內按兩下空白處新增便利貼</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL: ADD/EDIT KANBAN TASK -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3 id="modalTitle">新增看板任務</h3>
+                <button class="btn-close" id="btnTaskModalClose">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="taskForm">
+                <input type="hidden" id="taskIdInput">
+                <div class="form-group">
+                    <label for="taskTitleInput">任務標題</label>
+                    <input type="text" id="taskTitleInput" placeholder="請輸入任務內容..." required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="taskPriorityInput">優先順序</label>
+                        <select id="taskPriorityInput">
+                            <option value="low">低優先 (Low)</option>
+                            <option value="medium" selected>中優先 (Medium)</option>
+                            <option value="high">高優先 (High)</option>
+                        </select>
+                    </div>
+                    <div class="form-group half">
+                        <label for="taskDateInput">截止日期</label>
+                        <input type="date" id="taskDateInput">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>子任務清單 (Subtasks)</label>
+                    <div class="subtask-inputs-list" id="subtaskInputsList">
+                        <!-- subtask rows injected here -->
+                    </div>
+                    <button type="button" class="btn-link" id="btnAddSubtaskRow">
+                        <i data-lucide="plus"></i>
+                        新增子任務
+                    </button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btnCancelTaskModal">取消</button>
+                    <button type="submit" class="btn-primary" id="btnSubmitTaskModal">確認儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Web Audio API Synthesizer Script and Core App Logic -->
+    <script src="app.js"></script>
+</body>
+</html>

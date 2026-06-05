@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lab 3 - 瑪利歐風格跳躍遊戲">
+    <title>Lab 3 | Neon Mario</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            max-width: 900px;
+            width: 95%;
+            animation: fadeIn 0.8s ease-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #00ffcc;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        .game-wrapper {
+            border: 2px solid rgba(0, 255, 204, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.4);
+            /* Set fixed size for wrapper to match canvas */
+            width: 800px;
+            height: 400px;
+            max-width: 100%;
+        }
+
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: auto !important;
+            aspect-ratio: 800 / 400;
+        }
+
+        .controls-info {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #aaa;
+            display: flex;
+            gap: 20px;
+        }
+
+        kbd {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #00ffcc;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(0, 255, 204, 0.1);
+            border-radius: 8px;
+            transition: 0.3s;
+            font-weight: 600;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+        }
+
+        .back-link:hover {
+            background: rgba(0, 255, 204, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.2);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 隱藏不必要的載入提示 */
+        #game-canvas {
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Neon Mario</h1>
+        <div class="game-wrapper">
+            <canvas id="game-canvas"></canvas>
+        </div>
+        <div class="controls-info">
+            <span>移動: <kbd>←</kbd> <kbd>→</kbd> 或 <kbd>A</kbd> <kbd>D</kbd></span>
+            <span>跳躍: <kbd>Space</kbd> 或 <kbd>↑</kbd></span>
+        </div>
+        <a href="../index.html" class="back-link">← 回到主頁</a>
+    </div>
+
+    <script type="module">
+        import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
+
+        kaboom({
+            width: 800,
+            height: 400,
+            canvas: document.getElementById("game-canvas"),
+            background: [0, 0, 0, 0], // 透明背景
+            global: true
+        });
+
+        const MOVE_SPEED = 240;
+        const JUMP_FORCE = 700;
+        const ENEMY_SPEED = 80;
+        const FALL_DEATH = 600;
+
+        setGravity(2200);
+
+        // 自定義組件：巡邏的敵人
+        function patrol(speed = 80, dir = -1) {
+            return {
+                id: "patrol",
+                require: ["pos", "area"],
+                add() {
+                    this.onCollide((obj, col) => {
+                        if (col.isLeft() || col.isRight()) {
+                            dir = -dir;
+                        }
+                    });
+                },
+                update() {
+                    this.move(speed * dir, 0);
+                },
+            };
+        }
+
+        scene("game", ({ score, levelIdx }) => {
+
+            const maps = [
+                [
+                    "                                      ",
+                    "                                      ",
+                    "                                      ",
+                    "                                      ",
+                    "                                      ",
+                    "      ?   x?x                         ",
+                    "                                      ",
+                    "                  p                   ",
+                    "         ^        p             ^     ",
+                    "========================   ==========="
+                ],
+                [
+                    "                                      ",
+                    "                                      ",
+                    "                                      ",
+                    "                                      ",
+                    "      ?                               ",
+                    "           xxx                        ",
+                    "                                      ",
+                    "     x?x          p                   ",
+                    "           ^      p          ^        ",
+                    "==============  ==========  =========="
+                ]
+            ];
+
+            const levelConf = {
+                tileWidth: 40,
+                tileHeight: 40,
+                tiles: {
+                    "=": () => [
+                        rect(40, 40),
+                        color(44, 83, 100), // 地板顏色
+                        area(),
+                        body({ isStatic: true }),
+                        "ground"
+                    ],
+                    "x": () => [
+                        rect(40, 40),
+                        color(100, 100, 100), // 一般磚塊
+                        area(),
+                        body({ isStatic: true }),
+                        "brick"
+                    ],
+                    "?": () => [
+                        rect(40, 40),
+                        color(255, 204, 0), // 驚喜磚塊
+                        area(),
+                        body({ isStatic: true }),
+                        "surprise",
+                        { coinInside: true }
+                    ],
+                    "$": () => [
+                        circle(12),
+                        color(255, 255, 50),
+                        area(),
+                        "coin"
+                    ],
+                    "^": () => [
+                        rect(32, 32),
+                        color(255, 50, 50), // 敵人
+                        area(),
+                        body(),
+                        patrol(ENEMY_SPEED),
+                        "enemy"
+                    ],
+                    "p": () => [
+                        rect(40, 40),
+                        color(0, 200, 100), // 水管
+                        area(),
+                        body({ isStatic: true }),
+                        "pipe"
+                    ],
+                    // 通關旗桿
+                    "|": () => [
+                        rect(10, 200),
+                        color(255, 255, 255),
+                        area(),
+                        body({ isStatic: true }),
+                        "flagpole"
+                    ]
+                }
+            };
+
+            // 在關卡最後加上旗桿
+            const currentMap = maps[levelIdx] || maps[0];
+            currentMap[currentMap.length - 3] += "   |";
+            currentMap[currentMap.length - 2] += "   |";
+            currentMap[currentMap.length - 1] += "====";
+
+            const gameLevel = addLevel(currentMap, levelConf);
+
+            // 加入玩家
+            const player = add([
+                rect(30, 30),
+                color(0, 255, 204), // 玩家顏色 (霓虹青)
+                area(),
+                body(),
+                pos(50, 0),
+                "player"
+            ]);
+
+            // UI
+            const scoreLabel = add([
+                text("SCORE: " + score, { size: 24, font: "monospace" }),
+                pos(20, 20),
+                fixed(),
+                color(255, 255, 255),
+                { value: score }
+            ]);
+
+            const levelLabel = add([
+                text("LEVEL: " + (levelIdx + 1), { size: 24, font: "monospace" }),
+                pos(20, 50),
+                fixed(),
+                color(255, 255, 255)
+            ]);
+
+            // 移動控制
+            onKeyDown("left", () => {
+                player.move(-MOVE_SPEED, 0);
+            });
+            onKeyDown("a", () => {
+                player.move(-MOVE_SPEED, 0);
+            });
+
+            onKeyDown("right", () => {
+                player.move(MOVE_SPEED, 0);
+            });
+            onKeyDown("d", () => {
+                player.move(MOVE_SPEED, 0);
+            });
+
+            function doJump() {
+                if (player.isGrounded()) {
+                    player.jump(JUMP_FORCE);
+                }
+            }
+
+            onKeyPress("space", doJump);
+            onKeyPress("up", doJump);
+            onKeyPress("w", doJump);
+
+            // 頂磚塊邏輯
+            player.onHeadbutt((obj) => {
+                if (obj.is("surprise") && obj.coinInside) {
+                    obj.color = rgb(100, 100, 100); // 變暗
+                    obj.coinInside = false;
+
+                    // 彈出金幣特效
+                    add([
+                        circle(10),
+                        color(255, 255, 50),
+                        pos(obj.pos.sub(0, 40)),
+                        move(UP, 200),
+                        lifespan(0.4, { fade: 0.1 })
+                    ]);
+
+                    scoreLabel.value += 10;
+                    scoreLabel.text = "SCORE: " + scoreLabel.value;
+                }
+            });
+
+            // 碰撞邏輯：敵人
+            player.onCollide("enemy", (e, col) => {
+                // 若玩家碰到敵人的上方
+                if (col.isBottom()) {
+                    destroy(e);
+                    player.jump(JUMP_FORCE / 1.5); // 踩死後小跳
+                    scoreLabel.value += 50;
+                    scoreLabel.text = "SCORE: " + scoreLabel.value;
+
+                    // 死亡分數特效
+                    add([
+                        text("50", { size: 16 }),
+                        pos(e.pos),
+                        move(UP, 100),
+                        lifespan(0.5, { fade: 0.5 })
+                    ]);
+                } else {
+                    // 死掉
+                    go("lose", { score: scoreLabel.value });
+                }
+            });
+
+            // 碰撞邏輯：通關
+            player.onCollide("flagpole", () => {
+                if (levelIdx + 1 < maps.length) {
+                    // 進入下一關
+                    go("game", { score: scoreLabel.value, levelIdx: levelIdx + 1 });
+                } else {
+                    // 全破
+                    go("win", { score: scoreLabel.value });
+                }
+            });
+
+            // 攝影機跟隨玩家 & 掉下深淵判斷
+            player.onUpdate(() => {
+                // 限制攝影機不要往回拉太多，始終跟隨玩家 X 軸
+                const camX = Math.max(width() / 2, player.pos.x);
+                camPos(vec2(camX, 200));
+
+                if (player.pos.y >= FALL_DEATH) {
+                    go("lose", { score: scoreLabel.value });
+                }
+            });
+        });
+
+        scene("lose", ({ score }) => {
+            add([
+                text("GAME OVER", { size: 64, font: "monospace" }),
+                pos(width() / 2, height() / 2 - 40),
+                anchor("center"),
+                color(255, 50, 50)
+            ]);
+            add([
+                text("SCORE: " + score, { size: 32, font: "monospace" }),
+                pos(width() / 2, height() / 2 + 20),
+                anchor("center")
+            ]);
+            add([
+                text("Press Space to Retry", { size: 24, font: "monospace" }),
+                pos(width() / 2, height() / 2 + 80),
+                anchor("center"),
+                color(200, 200, 200)
+            ]);
+            onKeyPress("space", () => go("game", { score: 0, levelIdx: 0 }));
+        });
+
+        scene("win", ({ score }) => {
+            add([
+                text("YOU WIN!", { size: 64, font: "monospace" }),
+                pos(width() / 2, height() / 2 - 40),
+                anchor("center"),
+                color(0, 255, 204)
+            ]);
+            add([
+                text("FINAL SCORE: " + score, { size: 32, font: "monospace" }),
+                pos(width() / 2, height() / 2 + 20),
+                anchor("center")
+            ]);
+            add([
+                text("Press Space to Play Again", { size: 24, font: "monospace" }),
+                pos(width() / 2, height() / 2 + 80),
+                anchor("center"),
+                color(200, 200, 200)
+            ]);
+            onKeyPress("space", () => go("game", { score: 0, levelIdx: 0 }));
+        });
+
+        // 啟動遊戲
+        go("game", { score: 0, levelIdx: 0 });
+
+    </script>
+</body>
+
+</html>

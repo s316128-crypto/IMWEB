@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lab 1 - 流行猜歌王：挑戰你的耳朵與速度，測試你的熱門華語歌庫！">
+    <title>Lab 1 | 流行猜歌王 🎵</title>
+    <!-- Include Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- HEADER -->
+        <h1>🎵 流行猜歌王</h1>
+        <p class="subtitle">挑戰你的音樂知識與聽覺敏銳度！</p>
+
+        <!-- VIEW 1: INTRO / MENU -->
+        <div id="viewIntro" class="view active">
+            <div class="menu-options">
+                <div class="config-group">
+                    <label>選擇題數 (Rounds)</label>
+                    <div class="btn-group" data-config="rounds">
+                        <button class="btn-select active" data-value="5">5 題</button>
+                        <button class="btn-select" data-value="10">10 題</button>
+                        <button class="btn-select" data-value="20">20 題</button>
+                    </div>
+                </div>
+            </div>
+            <button id="btnStart" class="btn-game">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                開始遊戲 (Start Game)
+            </button>
+        </div>
+
+        <!-- VIEW 2: GAMEPLAY -->
+        <div id="viewPlay" class="view">
+            <!-- Game Info (Round & Score) -->
+            <div class="game-info-bar">
+                <div class="info-item">
+                    <span class="info-label">目前題數</span>
+                    <span id="lblRound" class="info-val highlight-blue">1/5</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">剩餘時間</span>
+                    <span id="lblTime" class="info-val">20s</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">目前得分</span>
+                    <span id="lblScore" class="info-val highlight-pink">0</span>
+                </div>
+            </div>
+
+            <!-- Progress Countdown Bar -->
+            <div class="timer-track">
+                <div id="timerBar" class="timer-bar"></div>
+            </div>
+
+            <!-- Spinning Vinyl disc -->
+            <div class="player-area">
+                <div id="vinylDisc" class="vinyl-disc">
+                    <div class="vinyl-center">
+                        <img id="albumArt" class="album-art" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'></svg>" alt="Album Cover">
+                    </div>
+                    <div class="vinyl-spindle"></div>
+                </div>
+                <div id="playBtnOverlay" class="play-btn-overlay" title="播放 / 暫停">
+                    <svg viewBox="0 0 24 24" id="playIcon">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Glowing wave/spectral visualizer -->
+            <div class="visualizer-container">
+                <canvas id="canvasVisualizer"></canvas>
+            </div>
+
+            <!-- Choice grid buttons -->
+            <div id="choicesGrid" class="choices-grid">
+                <!-- Choice buttons injected here -->
+            </div>
+
+            <!-- Live Feedback / Song Reveal details -->
+            <div class="feedback-area">
+                <div id="feedbackText" class="answer-feedback"></div>
+            </div>
+
+            <!-- Next button -->
+            <button id="btnNext" class="btn-game" style="display: none;">
+                下一題 (Next)
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+        </div>
+
+        <!-- VIEW 3: RESULTS / REVIEW -->
+        <div id="viewResults" class="view">
+            <h2>🎉 挑戰完成</h2>
+            
+            <div class="result-card">
+                <div class="result-score" id="resultScoreVal">0</div>
+                <div class="result-rank" id="resultRankVal">🎤 浴室歌手 (音準加油！)</div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">答對題數</div>
+                        <div class="stat-val" id="resultCorrect">0/5</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">平均答對率</div>
+                        <div class="stat-val" id="resultAccuracy">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="review-title">本輪歌單回顧 & 試聽</div>
+            <div id="playlistContainer" class="playlist-container">
+                <!-- Played tracks will be injected here with play buttons -->
+            </div>
+
+            <button id="btnRestart" class="btn-game">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                再玩一次 (Play Again)
+            </button>
+        </div>
+
+        <!-- FOOTER / RETURN LINK -->
+        <div class="footer-links">
+            <a href="../index.html" class="back-link">← 回到 Photo Booth 主頁</a>
+        </div>
+    </div>
+
+    <!-- Include Game Logic Script -->
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Booth</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Photo Booth <span>✨</span></h1>
+            <p>捕捉你的美好瞬間</p>
+        </header>
+
+        <main>
+            <div class="camera-section">
+                <div class="video-container" id="videoContainer">
+                    <!-- Default placeholder -->
+                    <div class="placeholder" id="placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        <p>請開啟鏡頭</p>
+                    </div>
+                    <video id="videoElement" autoplay playsinline></video>
+                    <div id="countdownOverlay" class="countdown-overlay hidden">3</div>
+                    <div id="flashOverlay" class="flash-overlay"></div>
+                </div>
+
+                <div class="controls glass-panel">
+                    <button id="btnStartCamera" class="btn primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                        偵測鏡頭
+                    </button>
+                    <button id="btnTakePhoto" class="btn secondary" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                        開始3連拍
+                    </button>
+                    <button id="btnDownload" class="btn accent" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        下載相紙
+                    </button>
+                </div>
+            </div>
+
+            <div class="gallery-section">
+                <h2>你的照片 📸</h2>
+                <div id="gallery" class="gallery">
+                    <!-- Photos will be injected here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden canvas for capturing video frames and generating final image -->
+    <canvas id="captureCanvas" style="display: none;"></canvas>
+    <canvas id="stripCanvas" style="display: none;"></canvas>
+
+    <script src="app.js"></script>
+</body>
+</html>
