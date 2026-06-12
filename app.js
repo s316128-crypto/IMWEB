@@ -1,224 +1,132 @@
+/**
+ * IMWEB Homepage - Ambient Particle Background
+ */
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
-    const videoElement = document.getElementById('videoElement');
-    const placeholder = document.getElementById('placeholder');
-    const countdownOverlay = document.getElementById('countdownOverlay');
-    const flashOverlay = document.getElementById('flashOverlay');
-    
-    const btnStartCamera = document.getElementById('btnStartCamera');
-    const btnTakePhoto = document.getElementById('btnTakePhoto');
-    const btnDownload = document.getElementById('btnDownload');
-    
-    const gallery = document.getElementById('gallery');
-    const captureCanvas = document.getElementById('captureCanvas');
-    const stripCanvas = document.getElementById('stripCanvas');
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
 
-    // State
-    let stream = null;
-    let capturedPhotos = []; // Will store data URLs
-    const TOTAL_PHOTOS = 3;
+    const mouse = { x: null, y: null };
+    const particles = [];
+    const PARTICLE_COUNT = 60;
+    const CONNECT_DIST = 100;
+    const MOUSE_RADIUS = 150;
 
-    // 1. Detect and Start Camera
-    btnStartCamera.addEventListener('click', async () => {
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    width: { ideal: 1280 },
-                    height: { ideal: 960 },
-                    facingMode: "user" 
-                } 
-            });
-            
-            videoElement.srcObject = stream;
-            videoElement.style.display = 'block';
-            placeholder.style.display = 'none';
-            
-            // Wait for video to load metadata to get actual dimensions
-            videoElement.onloadedmetadata = () => {
-                videoElement.play();
-                btnTakePhoto.disabled = false;
-                btnStartCamera.disabled = true; // Optionally disable start button
-                btnStartCamera.textContent = '鏡頭已開啟';
-            };
-        } catch (err) {
-            console.error("Error accessing camera:", err);
-            alert("無法存取相機，請確認已授權權限。");
-        }
-    });
-
-    // 2. Start 3 Continuous Photos
-    btnTakePhoto.addEventListener('click', async () => {
-        // Reset state
-        capturedPhotos = [];
-        gallery.innerHTML = '';
-        btnTakePhoto.disabled = true;
-        btnDownload.disabled = true;
-
-        for (let i = 0; i < TOTAL_PHOTOS; i++) {
-            await takeSinglePhotoSequence();
-            
-            // Wait a bit before the next photo starts (if not the last one)
-            if (i < TOTAL_PHOTOS - 1) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-        }
-
-        // All photos taken
-        btnTakePhoto.disabled = false;
-        btnDownload.disabled = false;
-    });
-
-    async function takeSinglePhotoSequence() {
-        return new Promise(async (resolve) => {
-            // Countdown 3, 2, 1
-            countdownOverlay.classList.remove('hidden');
-            for (let count = 3; count > 0; count--) {
-                countdownOverlay.textContent = count;
-                // Add a little pop animation
-                countdownOverlay.style.transform = 'scale(1.2)';
-                setTimeout(() => countdownOverlay.style.transform = 'scale(1)', 100);
-                
-                await new Promise(r => setTimeout(r, 1000));
-            }
-            
-            // Take the photo!
-            countdownOverlay.classList.add('hidden');
-            
-            // Flash effect
-            flashOverlay.classList.add('active');
-            setTimeout(() => {
-                flashOverlay.classList.remove('active');
-            }, 150);
-
-            // Capture frame to canvas
-            const ctx = captureCanvas.getContext('2d');
-            captureCanvas.width = videoElement.videoWidth;
-            captureCanvas.height = videoElement.videoHeight;
-            
-            // Mirror the canvas context so the saved image looks like what user sees
-            ctx.translate(captureCanvas.width, 0);
-            ctx.scale(-1, 1);
-            
-            ctx.drawImage(videoElement, 0, 0, captureCanvas.width, captureCanvas.height);
-            
-            const photoDataUrl = captureCanvas.toDataURL('image/jpeg', 0.9);
-            capturedPhotos.push(photoDataUrl);
-            
-            // Add to gallery DOM
-            const imgContainer = document.createElement('div');
-            imgContainer.className = 'gallery-item';
-            
-            // We don't mirror the image here because the canvas was already mirrored.
-            // But wait, the CSS `.gallery-item img` has `transform: scaleX(-1)`.
-            // Let's remove the CSS mirror for the gallery item if we mirrored in canvas, 
-            // OR we don't mirror in canvas and mirror in CSS.
-            // Actually, people usually want the final photo to NOT be mirrored (read text normally),
-            // but while taking a selfie they want a mirror.
-            // Let's NOT mirror the canvas context. So the final photo reads correctly.
-            // Let's fix that logic:
-            
-            const finalCtx = captureCanvas.getContext('2d');
-            // reset transform just in case
-            finalCtx.setTransform(1, 0, 0, 1, 0, 0);
-            // We want the saved photo to be exactly what the camera sees (non-mirrored text),
-            // but the video preview IS mirrored.
-            finalCtx.drawImage(videoElement, 0, 0, captureCanvas.width, captureCanvas.height);
-            const actualPhotoDataUrl = captureCanvas.toDataURL('image/jpeg', 0.9);
-            
-            // Update the array with actual data
-            capturedPhotos[capturedPhotos.length - 1] = actualPhotoDataUrl;
-
-            const img = document.createElement('img');
-            img.src = actualPhotoDataUrl;
-            imgContainer.appendChild(img);
-            gallery.appendChild(imgContainer);
-
-            resolve();
-        });
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width = `${window.innerWidth}px`;
+        canvas.style.height = `${window.innerHeight}px`;
+        ctx.scale(dpr, dpr);
     }
 
-    // 3. Download the 3 photos combined into one strip
-    btnDownload.addEventListener('click', () => {
-        if (capturedPhotos.length === 0) return;
+    resize();
+    window.addEventListener('resize', resize);
 
-        const ctx = stripCanvas.getContext('2d');
-        
-        // Settings for the photo strip
-        const photoWidth = 600;
-        const aspectRatio = videoElement.videoHeight / videoElement.videoWidth;
-        const photoHeight = photoWidth * aspectRatio;
-        const padding = 30;
-        const footerHeight = 120;
-        
-        // Total height = padding + (3 * photoHeight) + (2 * padding between photos) + footerHeight
-        stripCanvas.width = photoWidth + (padding * 2);
-        stripCanvas.height = padding + (TOTAL_PHOTOS * photoHeight) + ((TOTAL_PHOTOS - 1) * padding) + footerHeight;
+    window.addEventListener('mousemove', e => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+    });
 
-        // Draw background
-        ctx.fillStyle = '#ffffff'; // White paper background
-        ctx.fillRect(0, 0, stripCanvas.width, stripCanvas.height);
+    window.addEventListener('mouseleave', () => {
+        mouse.x = null;
+        mouse.y = null;
+    });
 
-        // Load images and draw them
-        let loadedCount = 0;
-        const images = [];
-
-        capturedPhotos.forEach((dataUrl, index) => {
-            const img = new Image();
-            img.onload = () => {
-                images[index] = img;
-                loadedCount++;
-                
-                if (loadedCount === TOTAL_PHOTOS) {
-                    drawStripAndDownload(images, ctx, photoWidth, photoHeight, padding, footerHeight);
+    class Particle {
+        constructor() {
+            this.reset();
+        }
+        reset() {
+            this.x = Math.random() * window.innerWidth;
+            this.y = Math.random() * window.innerHeight;
+            this.vx = (Math.random() - 0.5) * 0.3;
+            this.vy = (Math.random() - 0.5) * 0.3;
+            this.r = Math.random() * 1.8 + 0.8;
+            this.alpha = Math.random() * 0.4 + 0.1;
+            const palette = ['rgba(0,242,254,', 'rgba(79,172,254,', 'rgba(161,140,209,', 'rgba(255,255,255,'];
+            this.color = palette[Math.floor(Math.random() * palette.length)];
+        }
+        update() {
+            if (mouse.x !== null) {
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                const d = Math.hypot(dx, dy);
+                if (d < MOUSE_RADIUS) {
+                    const f = (MOUSE_RADIUS - d) / MOUSE_RADIUS;
+                    this.vx += (dx / d) * f * 0.007;
+                    this.vy += (dy / d) * f * 0.007;
                 }
-            };
-            img.src = dataUrl;
-        });
-    });
-
-    function drawStripAndDownload(images, ctx, photoWidth, photoHeight, padding, footerHeight) {
-        // Draw each photo
-        images.forEach((img, index) => {
-            const x = padding;
-            const y = padding + index * (photoHeight + padding);
-            
-            // Mirror the image horizontally BEFORE drawing it to the strip
-            // Because our captured photo is non-mirrored, but users usually prefer their selfies mirrored in the final strip as they saw it.
-            // Actually, let's keep it mirrored in the final strip so it matches their preview.
-            ctx.save();
-            ctx.translate(x + photoWidth, y);
-            ctx.scale(-1, 1);
-            ctx.drawImage(img, 0, 0, photoWidth, photoHeight);
-            ctx.restore();
-            
-            // Add a subtle inner border/shadow effect to each photo
-            ctx.strokeStyle = '#e2e8f0';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(x, y, photoWidth, photoHeight);
-        });
-
-        // Draw Text/Footer
-        const textY = stripCanvas.height - (footerHeight / 2);
-        ctx.fillStyle = '#0f172a';
-        ctx.textAlign = 'center';
-        
-        // Main Title
-        ctx.font = 'bold 36px "Inter", sans-serif';
-        ctx.fillText('Photo Booth ✨', stripCanvas.width / 2, textY - 10);
-        
-        // Date
-        ctx.font = '20px "Inter", sans-serif';
-        ctx.fillStyle = '#64748b';
-        const dateStr = new Date().toLocaleString('zh-TW', { 
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit'
-        });
-        ctx.fillText(dateStr, stripCanvas.width / 2, textY + 30);
-
-        // Trigger Download
-        const link = document.createElement('a');
-        link.download = `PhotoBooth_${new Date().getTime()}.png`;
-        link.href = stripCanvas.toDataURL('image/png');
-        link.click();
+            }
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vx *= 0.98;
+            this.vy *= 0.98;
+            const sp = Math.hypot(this.vx, this.vy);
+            if (sp > 1.2) { this.vx = this.vx/sp*1.2; this.vy = this.vy/sp*1.2; }
+            if (this.x < 0) this.x = window.innerWidth;
+            if (this.x > window.innerWidth) this.x = 0;
+            if (this.y < 0) this.y = window.innerHeight;
+            if (this.y > window.innerHeight) this.y = 0;
+        }
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+            ctx.fillStyle = this.color + this.alpha + ')';
+            ctx.fill();
+        }
     }
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
+
+    function loop() {
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+        // Background
+        const grad = ctx.createRadialGradient(
+            window.innerWidth/2, window.innerHeight/2, 0,
+            window.innerWidth/2, window.innerHeight/2, Math.max(window.innerWidth, window.innerHeight)
+        );
+        grad.addColorStop(0, '#0c0b24');
+        grad.addColorStop(0.5, '#05040f');
+        grad.addColorStop(1, '#020105');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+        // Update & draw particles
+        particles.forEach(p => { p.update(); p.draw(); });
+
+        // Connect lines between particles
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i+1; j < particles.length; j++) {
+                const p1 = particles[i], p2 = particles[j];
+                const d = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                if (d < CONNECT_DIST) {
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.strokeStyle = `rgba(141,169,236,${(1 - d/CONNECT_DIST) * 0.1})`;
+                    ctx.lineWidth = 0.7;
+                    ctx.stroke();
+                }
+            }
+            // Connect to mouse
+            if (mouse.x !== null) {
+                const p = particles[i];
+                const d = Math.hypot(p.x - mouse.x, p.y - mouse.y);
+                if (d < MOUSE_RADIUS) {
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(mouse.x, mouse.y);
+                    ctx.strokeStyle = `rgba(0,242,254,${(1 - d/MOUSE_RADIUS) * 0.18})`;
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    loop();
 });
